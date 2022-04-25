@@ -71,6 +71,8 @@ builder.Services.AddAuthentication(config =>
     };
 });
 
+builder.Services.AddApplicationInsightsTelemetry();
+
 const string CORS_POLICY = "CorsPolicy";
 builder.Services.AddCors(options =>
 {
