@@ -1,11 +1,18 @@
-﻿using System.Linq;
+﻿using System.Configuration;
+using System.Linq;
+using System.Net.Http;
+using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Ardalis.GuardClauses;
+using BlazorShared;
 using Microsoft.eShopWeb.ApplicationCore.Entities;
 using Microsoft.eShopWeb.ApplicationCore.Entities.BasketAggregate;
 using Microsoft.eShopWeb.ApplicationCore.Entities.OrderAggregate;
 using Microsoft.eShopWeb.ApplicationCore.Interfaces;
 using Microsoft.eShopWeb.ApplicationCore.Specifications;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 
 namespace Microsoft.eShopWeb.ApplicationCore.Services;
 
@@ -15,16 +22,23 @@ public class OrderService : IOrderService
     private readonly IUriComposer _uriComposer;
     private readonly IRepository<Basket> _basketRepository;
     private readonly IRepository<CatalogItem> _itemRepository;
+    private readonly BaseUrlConfiguration _baseUrlConfiguration;
+    private readonly AzureFunctionConfiguration _azureFunctionConfiguration;
+    private const string _orderFunction = "OrderItemsReserver";
 
     public OrderService(IRepository<Basket> basketRepository,
         IRepository<CatalogItem> itemRepository,
         IRepository<Order> orderRepository,
-        IUriComposer uriComposer)
+        IUriComposer uriComposer,
+        IOptions<BaseUrlConfiguration> baseUrlConfiguration,
+        IOptions<AzureFunctionConfiguration> azureFunctionConfiguration)
     {
         _orderRepository = orderRepository;
         _uriComposer = uriComposer;
         _basketRepository = basketRepository;
         _itemRepository = itemRepository;
+        _baseUrlConfiguration = baseUrlConfiguration.Value;
+        _azureFunctionConfiguration = azureFunctionConfiguration.Value;
     }
 
     public async Task CreateOrderAsync(int basketId, Address shippingAddress)
@@ -47,7 +61,23 @@ public class OrderService : IOrderService
         }).ToList();
 
         var order = new Order(basket.BuyerId, shippingAddress, items);
+        await PublishNewOrder(order);
 
         await _orderRepository.AddAsync(order);
+    }
+
+    public async Task<string> PublishNewOrder(Order order)
+    {
+        using (var client = new HttpClient())
+        {
+            client.DefaultRequestHeaders.Add("x-functions-key", _azureFunctionConfiguration.Key);
+            string json = JsonSerializer.Serialize(order);
+            var data = new StringContent(json, Encoding.UTF8, "application/json");
+
+            var response = await client.PostAsync($"{_azureFunctionConfiguration.Url}{_orderFunction}", data);
+            var result = await response.Content.ReadAsStringAsync();
+
+            return result;
+        }
     }
 }

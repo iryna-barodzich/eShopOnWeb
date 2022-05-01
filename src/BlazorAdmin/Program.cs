@@ -20,6 +20,9 @@ builder.RootComponents.Add<HeadOutlet>("head::after");
 var configSection = builder.Configuration.GetRequiredSection(BaseUrlConfiguration.CONFIG_NAME);
 builder.Services.Configure<BaseUrlConfiguration>(configSection);
 
+var configSectionKey = builder.Configuration.GetRequiredSection("BlobFunction");
+builder.Services.Configure<AzureFunctionConfiguration>(configSectionKey);
+
 builder.Services.AddScoped(sp => new HttpClient() { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });
 
 builder.Services.AddScoped<ToastService>();

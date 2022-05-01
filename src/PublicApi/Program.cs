@@ -51,6 +51,9 @@ var configSection = builder.Configuration.GetRequiredSection(BaseUrlConfiguratio
 builder.Services.Configure<BaseUrlConfiguration>(configSection);
 var baseUrlConfig = configSection.Get<BaseUrlConfiguration>();
 
+var configSectionKey = builder.Configuration.GetRequiredSection("BlobFunction");
+builder.Services.Configure<AzureFunctionConfiguration>(configSectionKey);
+
 builder.Services.AddMemoryCache();
 
 var key = Encoding.ASCII.GetBytes(AuthorizationConstants.JWT_SECRET_KEY);

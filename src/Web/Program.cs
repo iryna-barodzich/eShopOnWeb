@@ -79,6 +79,9 @@ var configSection = builder.Configuration.GetRequiredSection(BaseUrlConfiguratio
 builder.Services.Configure<BaseUrlConfiguration>(configSection);
 var baseUrlConfig = configSection.Get<BaseUrlConfiguration>();
 
+var configSectionKey = builder.Configuration.GetRequiredSection("BlobFunction");
+builder.Services.Configure<AzureFunctionConfiguration>(configSectionKey);
+
 // Blazor Admin Required Services for Prerendering
 builder.Services.AddScoped<HttpClient>(s => new HttpClient
 {
