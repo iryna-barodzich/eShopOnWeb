@@ -61,9 +61,9 @@ public class OrderService : IOrderService
         }).ToList();
 
         var order = new Order(basket.BuyerId, shippingAddress, items);
-        await PublishNewOrder(order);
 
         await _orderRepository.AddAsync(order);
+        await PublishNewOrder(order);
     }
 
     public async Task<string> PublishNewOrder(Order order)

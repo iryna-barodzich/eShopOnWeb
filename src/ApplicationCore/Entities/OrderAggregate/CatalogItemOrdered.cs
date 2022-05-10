@@ -1,4 +1,5 @@
-﻿using Ardalis.GuardClauses;
+﻿using System.Text.Json.Serialization;
+using Ardalis.GuardClauses;
 
 namespace Microsoft.eShopWeb.ApplicationCore.Entities.OrderAggregate;
 
@@ -8,13 +9,13 @@ namespace Microsoft.eShopWeb.ApplicationCore.Entities.OrderAggregate;
 /// </summary>
 public class CatalogItemOrdered // ValueObject
 {
-    public CatalogItemOrdered(int catalogItemId, string productName, string pictureUri)
+    public CatalogItemOrdered(int id, string productName, string pictureUri)
     {
-        Guard.Against.OutOfRange(catalogItemId, nameof(catalogItemId), 1, int.MaxValue);
+        Guard.Against.OutOfRange(id, nameof(id), 1, int.MaxValue);
         Guard.Against.NullOrEmpty(productName, nameof(productName));
         Guard.Against.NullOrEmpty(pictureUri, nameof(pictureUri));
 
-        CatalogItemId = catalogItemId;
+        Id = id;
         ProductName = productName;
         PictureUri = pictureUri;
     }
@@ -23,8 +24,8 @@ public class CatalogItemOrdered // ValueObject
     {
         // required by EF
     }
-
-    public int CatalogItemId { get; private set; }
+    [JsonPropertyName("id")]
+    public int Id { get; private set; }
     public string ProductName { get; private set; }
     public string PictureUri { get; private set; }
 }
