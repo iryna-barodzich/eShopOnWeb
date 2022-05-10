@@ -4,7 +4,6 @@ namespace Microsoft.eShopWeb.ApplicationCore.Entities.OrderAggregate;
 
 public class Address // ValueObject
 {
-    [JsonPropertyName("id")]
     public string Street { get; private set; }
 
     public string City { get; private set; }

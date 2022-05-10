@@ -9,13 +9,13 @@ namespace Microsoft.eShopWeb.ApplicationCore.Entities.OrderAggregate;
 /// </summary>
 public class CatalogItemOrdered // ValueObject
 {
-    public CatalogItemOrdered(int id, string productName, string pictureUri)
+    public CatalogItemOrdered(int catalogItemId, string productName, string pictureUri)
     {
-        Guard.Against.OutOfRange(id, nameof(id), 1, int.MaxValue);
+        Guard.Against.OutOfRange(catalogItemId, nameof(catalogItemId), 1, int.MaxValue);
         Guard.Against.NullOrEmpty(productName, nameof(productName));
         Guard.Against.NullOrEmpty(pictureUri, nameof(pictureUri));
 
-        Id = id;
+        CatalogItemId = catalogItemId;
         ProductName = productName;
         PictureUri = pictureUri;
     }
@@ -24,8 +24,7 @@ public class CatalogItemOrdered // ValueObject
     {
         // required by EF
     }
-    [JsonPropertyName("id")]
-    public int Id { get; private set; }
+    public int CatalogItemId { get; private set; }
     public string ProductName { get; private set; }
     public string PictureUri { get; private set; }
 }

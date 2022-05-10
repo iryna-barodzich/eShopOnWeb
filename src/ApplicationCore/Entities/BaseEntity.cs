@@ -7,5 +7,5 @@ namespace Microsoft.eShopWeb.ApplicationCore.Entities;
 public abstract class BaseEntity
 {
     [JsonPropertyName("id")]
-    public virtual int Id { get; protected set; }
+    public virtual int Id { get; set; }
 }
