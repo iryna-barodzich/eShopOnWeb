@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Azure.Identity;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using BlazorShared;
@@ -33,6 +34,11 @@ builder.Services.AddEndpoints();
 //Use to force loading of appsettings.json of test project
 builder.Configuration.AddConfigurationFile("appsettings.test.json");
 builder.Logging.AddConsole();
+
+var url = $"https://{builder.Configuration["KeyVaultName"]}.vault.azure.net/";
+builder.Configuration.AddAzureKeyVault(
+       new Uri(url),
+       new DefaultAzureCredential());
 
 Microsoft.eShopWeb.Infrastructure.Dependencies.ConfigureServices(builder.Configuration, builder.Services);
 
