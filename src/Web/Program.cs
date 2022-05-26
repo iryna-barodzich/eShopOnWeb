@@ -22,10 +22,10 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Logging.AddConsole();
 
-var url = $"https://{builder.Configuration["KeyVaultName"]}.vault.azure.net/";
+/*var url = $"https://{builder.Configuration["KeyVaultName"]}.vault.azure.net/";
 builder.Configuration.AddAzureKeyVault(
        new Uri(url),
-       new DefaultAzureCredential());
+       new DefaultAzureCredential());*/
 
 Microsoft.eShopWeb.Infrastructure.Dependencies.ConfigureServices(builder.Configuration, builder.Services);
 
@@ -87,6 +87,9 @@ var baseUrlConfig = configSection.Get<BaseUrlConfiguration>();
 
 var configSectionKey = builder.Configuration.GetRequiredSection("BlobFunction");
 builder.Services.Configure<AzureFunctionConfiguration>(configSectionKey);
+
+var serviceBusSection = builder.Configuration.GetRequiredSection("ServiceBusConfiguration");
+builder.Services.Configure<ServiceBusConfiguration>(serviceBusSection);
 
 // Blazor Admin Required Services for Prerendering
 builder.Services.AddScoped<HttpClient>(s => new HttpClient

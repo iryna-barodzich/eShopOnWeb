@@ -6,6 +6,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using Ardalis.GuardClauses;
+using Azure.Messaging.ServiceBus;
 using BlazorShared;
 using Microsoft.eShopWeb.ApplicationCore.Entities;
 using Microsoft.eShopWeb.ApplicationCore.Entities.BasketAggregate;
@@ -25,6 +26,7 @@ public class OrderService : IOrderService
     private readonly IRepository<CatalogItem> _itemRepository;
     private readonly BaseUrlConfiguration _baseUrlConfiguration;
     private readonly AzureFunctionConfiguration _azureFunctionConfiguration;
+    private readonly ServiceBusConfiguration _serviceBusConfiguration;
     private const string _orderFunction = "OrderItemsReserver";
 
     public OrderService(IRepository<Basket> basketRepository,
@@ -32,7 +34,8 @@ public class OrderService : IOrderService
         IRepository<Order> orderRepository,
         IUriComposer uriComposer,
         IOptions<BaseUrlConfiguration> baseUrlConfiguration,
-        IOptions<AzureFunctionConfiguration> azureFunctionConfiguration)
+        IOptions<AzureFunctionConfiguration> azureFunctionConfiguration,
+        IOptions<ServiceBusConfiguration> serviceBusConfiguration)
     {
         _orderRepository = orderRepository;
         _uriComposer = uriComposer;
@@ -40,6 +43,7 @@ public class OrderService : IOrderService
         _itemRepository = itemRepository;
         _baseUrlConfiguration = baseUrlConfiguration.Value;
         _azureFunctionConfiguration = azureFunctionConfiguration.Value;
+        _serviceBusConfiguration = serviceBusConfiguration.Value;
     }
 
     public async Task CreateOrderAsync(int basketId, Address shippingAddress)
@@ -64,7 +68,17 @@ public class OrderService : IOrderService
         var order = new Order(basket.BuyerId, shippingAddress, items);
 
         await _orderRepository.AddAsync(order);
-        await PublishNewOrder(order);
+        //await PublishNewOrder(order);
+        await SendMessage(order);
+    }
+
+    public async Task SendMessage(Order order)
+    {
+        await using var client = new ServiceBusClient(_serviceBusConfiguration.ConnectionString);
+        ServiceBusSender sender = client.CreateSender(_serviceBusConfiguration.QueueName);
+        string json = JsonSerializer.Serialize(order);
+        var message = new ServiceBusMessage(json);
+        await sender.SendMessageAsync(message);
     }
 
     public async Task<string> PublishNewOrder(Order order)

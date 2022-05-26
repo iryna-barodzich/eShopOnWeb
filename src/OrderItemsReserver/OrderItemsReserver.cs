@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
@@ -13,6 +13,10 @@ using Newtonsoft.Json;
 using Microsoft.eShopWeb.ApplicationCore.Entities.OrderAggregate;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Azure.Storage.Blobs;
+using Microsoft.WindowsAzure.Storage.RetryPolicies;
+using System.Net.Http;
+using System.Text;
 
 namespace OrderItemsReserver
 {
@@ -22,6 +26,7 @@ namespace OrderItemsReserver
         private readonly string _blobFileContainerName;
         private readonly string _endpointUri;
         private readonly string _primaryKey;
+        private readonly string _logicAppUri;
 
         public OrderItemsReserver(IConfiguration configuration)
         {
@@ -29,17 +34,32 @@ namespace OrderItemsReserver
             _blobFileContainerName = configuration.GetValue<string>("BlobFileContainerName");
             _endpointUri = configuration.GetValue<string>("EndpointUri");
             _primaryKey = configuration.GetValue<string>("PrimaryKey");
+            _logicAppUri = configuration.GetValue<string>("LogicAppUrl");
         }
 
         [FunctionName("OrderItemsReserver")]
-        public async Task<IActionResult> Run(
-            [HttpTrigger(AuthorizationLevel.Anonymous, "get", "post", Route = null)] HttpRequest req)
-        {
-            string requestBody = await new StreamReader(req.Body).ReadToEndAsync();
-            // await UploadToBlob(requestBody);
-            var responseMessage = await UploadToCosmosDb(requestBody);
+        public async Task Run(
+            //[HttpTrigger(AuthorizationLevel.Anonymous, "get", "post", Route = null)] HttpRequest req)
+            [ServiceBusTrigger("test-queue", Connection = "ServiceBusConnection")] string myQueueItem,
+    Int32 deliveryCount,
+    DateTime enqueuedTimeUtc,
+    string messageId)
+            {
 
-            return new OkObjectResult(responseMessage);
+            string requestBody = myQueueItem;
+
+            try
+            {
+                await UploadToBlob(requestBody);
+            }
+            catch (Exception ex)
+            {
+                HttpClient httpClient = new HttpClient();
+                var result = await httpClient.PostAsync(_logicAppUri, new StringContent(requestBody, Encoding.UTF8, "application/json"));
+            }
+
+
+            //return new OkObjectResult("Success");
         }
 
         private async Task<string> UploadToCosmosDb(string json)
@@ -99,8 +119,13 @@ namespace OrderItemsReserver
         {
             CloudStorageAccount storageAccount = CloudStorageAccount.Parse(_blobConnectionString);
             CloudBlobClient blobClient = storageAccount.CreateCloudBlobClient();
+            blobClient.DefaultRequestOptions = new BlobRequestOptions()
+            {
+                RetryPolicy = new LinearRetry(TimeSpan.FromSeconds(1), 3)
+            };
             CloudBlobContainer blobContainer = blobClient.GetContainerReference(_blobFileContainerName);
             await blobContainer.CreateIfNotExistsAsync();
+            // var client = new BlobClient(_blobConnectionString, _blobFileContainerName, Guid.NewGuid().ToString(), options);;
 
             CloudBlockBlob blob = blobContainer.GetBlockBlobReference(Guid.NewGuid().ToString());
 

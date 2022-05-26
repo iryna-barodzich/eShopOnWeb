@@ -35,10 +35,10 @@ builder.Services.AddEndpoints();
 builder.Configuration.AddConfigurationFile("appsettings.test.json");
 builder.Logging.AddConsole();
 
-var url = $"https://{builder.Configuration["KeyVaultName"]}.vault.azure.net/";
+/*var url = $"https://{builder.Configuration["KeyVaultName"]}.vault.azure.net/";
 builder.Configuration.AddAzureKeyVault(
        new Uri(url),
-       new DefaultAzureCredential());
+       new DefaultAzureCredential());*/
 
 Microsoft.eShopWeb.Infrastructure.Dependencies.ConfigureServices(builder.Configuration, builder.Services);
 
@@ -56,6 +56,9 @@ builder.Services.AddScoped<ITokenClaimsService, IdentityTokenClaimService>();
 var configSection = builder.Configuration.GetRequiredSection(BaseUrlConfiguration.CONFIG_NAME);
 builder.Services.Configure<BaseUrlConfiguration>(configSection);
 var baseUrlConfig = configSection.Get<BaseUrlConfiguration>();
+
+var serviceBusSection = builder.Configuration.GetRequiredSection("ServiceBusConfiguration");
+builder.Services.Configure<ServiceBusConfiguration>(serviceBusSection);
 
 var configSectionKey = builder.Configuration.GetRequiredSection("BlobFunction");
 builder.Services.Configure<AzureFunctionConfiguration>(configSectionKey);
