@@ -125,7 +125,6 @@ namespace OrderItemsReserver
             };
             CloudBlobContainer blobContainer = blobClient.GetContainerReference(_blobFileContainerName);
             await blobContainer.CreateIfNotExistsAsync();
-            // var client = new BlobClient(_blobConnectionString, _blobFileContainerName, Guid.NewGuid().ToString(), options);;
 
             CloudBlockBlob blob = blobContainer.GetBlockBlobReference(Guid.NewGuid().ToString());
 
