@@ -27,7 +27,8 @@ public class OrderService : IOrderService
     private readonly BaseUrlConfiguration _baseUrlConfiguration;
     private readonly AzureFunctionConfiguration _azureFunctionConfiguration;
     private readonly ServiceBusConfiguration _serviceBusConfiguration;
-    private const string _orderFunction = "OrderItemsReserver";
+    private const string _serviceBusFunction = "OrderItemsReserver";
+    private const string _httpFunction = "DeliveryOrderProcessor";
 
     public OrderService(IRepository<Basket> basketRepository,
         IRepository<CatalogItem> itemRepository,
@@ -68,7 +69,7 @@ public class OrderService : IOrderService
         var order = new Order(basket.BuyerId, shippingAddress, items);
 
         await _orderRepository.AddAsync(order);
-        //await PublishNewOrder(order);
+        await PublishNewOrder(order);
         await SendMessage(order);
     }
 
@@ -89,7 +90,7 @@ public class OrderService : IOrderService
             string json = JsonSerializer.Serialize(order);
             var data = new StringContent(json, Encoding.UTF8, "application/json");
 
-            var response = await client.PostAsync($"{_azureFunctionConfiguration.Url}{_orderFunction}", data);
+            var response = await client.PostAsync($"{_azureFunctionConfiguration.Url}{_httpFunction}", data);
             var result = await response.Content.ReadAsStringAsync();
 
             return result;

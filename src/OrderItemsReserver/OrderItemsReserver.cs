@@ -39,11 +39,10 @@ namespace OrderItemsReserver
 
         [FunctionName("OrderItemsReserver")]
         public async Task Run(
-            //[HttpTrigger(AuthorizationLevel.Anonymous, "get", "post", Route = null)] HttpRequest req)
             [ServiceBusTrigger("test-queue", Connection = "ServiceBusConnection")] string myQueueItem,
-    Int32 deliveryCount,
-    DateTime enqueuedTimeUtc,
-    string messageId)
+                Int32 deliveryCount,
+                DateTime enqueuedTimeUtc,
+                string messageId)
             {
 
             string requestBody = myQueueItem;
@@ -54,65 +53,14 @@ namespace OrderItemsReserver
             }
             catch (Exception ex)
             {
+                var errorMessage = ex.Message ?? "Error occured during uploading to the blob storage.";
+                var template = $"{errorMessage}\nOrder data:\n{requestBody}";
                 HttpClient httpClient = new HttpClient();
-                var result = await httpClient.PostAsync(_logicAppUri, new StringContent(requestBody, Encoding.UTF8, "application/json"));
+                var result = await httpClient.PostAsync(_logicAppUri, new StringContent(template, Encoding.UTF8, "application/json"));
             }
 
 
             //return new OkObjectResult("Success");
-        }
-
-        private async Task<string> UploadToCosmosDb(string json)
-        {
-            try
-            {
-                var cosmosOptions = new CosmosClientOptions()
-                {
-                    SerializerOptions = new CosmosSerializationOptions()
-                    {
-                        PropertyNamingPolicy = CosmosPropertyNamingPolicy.CamelCase
-                    }
-
-                };
-                using (CosmosClient client = new CosmosClient(connectionString: _endpointUri, clientOptions: cosmosOptions))
-                {
-                    DatabaseResponse databaseResponse = await client.CreateDatabaseIfNotExistsAsync("Delivery");
-                    Database targetDatabase = databaseResponse.Database;
-                    IndexingPolicy indexingPolicy = new IndexingPolicy
-                    {
-                        IndexingMode = IndexingMode.Consistent,
-                        Automatic = true,
-                        IncludedPaths =
-                    {
-                        new IncludedPath
-                        {
-                            Path = "/*"
-                        }
-                    }
-                    };
-                    var containerProperties = new ContainerProperties("Orders", "/Id")
-                    {
-                        IndexingPolicy = indexingPolicy
-                    };
-                    var containerResponse = await targetDatabase.CreateContainerIfNotExistsAsync(containerProperties, 1000);
-                    var customContainer = containerResponse.Container;
-                    var order = JsonConvert.DeserializeObject<Order>(json);
-                    var orderModel = new OrderModel
-                    {
-                        Id = order.Id.ToString(),
-                        ShipToAddress = order.ShipToAddress,
-                        BuyerId = order.BuyerId,
-                        OrderDate = order.OrderDate,
-                        OrderItems = order.OrderItems
-                    };
-                    var test = await customContainer.CreateItemAsync(orderModel);
-                }
-            }
-            catch (Exception ex)
-            {
-                return ex.Message;
-            }
-            return "Success";
         }
 
         private async Task UploadToBlob(string json)
