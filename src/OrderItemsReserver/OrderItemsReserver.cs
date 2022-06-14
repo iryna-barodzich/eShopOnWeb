@@ -24,16 +24,12 @@ namespace OrderItemsReserver
     {
         private readonly string _blobConnectionString;
         private readonly string _blobFileContainerName;
-        private readonly string _endpointUri;
-        private readonly string _primaryKey;
         private readonly string _logicAppUri;
 
         public OrderItemsReserver(IConfiguration configuration)
         {
             _blobConnectionString = configuration.GetValue<string>("BlobConnectionString");
             _blobFileContainerName = configuration.GetValue<string>("BlobFileContainerName");
-            _endpointUri = configuration.GetValue<string>("EndpointUri");
-            _primaryKey = configuration.GetValue<string>("PrimaryKey");
             _logicAppUri = configuration.GetValue<string>("LogicAppUrl");
         }
 
@@ -53,14 +49,9 @@ namespace OrderItemsReserver
             }
             catch (Exception ex)
             {
-                var errorMessage = ex.Message ?? "Error occured during uploading to the blob storage.";
-                var template = $"{errorMessage}\nOrder data:\n{requestBody}";
                 HttpClient httpClient = new HttpClient();
-                var result = await httpClient.PostAsync(_logicAppUri, new StringContent(template, Encoding.UTF8, "application/json"));
+                var result = await httpClient.PostAsync(_logicAppUri, new StringContent(requestBody, Encoding.UTF8, "application/json"));
             }
-
-
-            //return new OkObjectResult("Success");
         }
 
         private async Task UploadToBlob(string json)
