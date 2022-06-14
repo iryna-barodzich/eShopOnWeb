@@ -39,7 +39,7 @@ namespace OrderItemsReserver
 
         [FunctionName("OrderItemsReserver")]
         public async Task Run(
-            [ServiceBusTrigger("test-queue", Connection = "ServiceBusConnection")] string myQueueItem,
+            [ServiceBusTrigger("final-queue", Connection = "ServiceBusConnection")] string myQueueItem,
                 Int32 deliveryCount,
                 DateTime enqueuedTimeUtc,
                 string messageId)
